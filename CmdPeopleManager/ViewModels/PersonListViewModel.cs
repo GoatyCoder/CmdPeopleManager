@@ -1,65 +1,51 @@
 ﻿using CmdPeopleManager.Commands;
 using CmdPeopleManager.Models;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Windows.Input;
 
 namespace CmdPeopleManager.ViewModels
 {
-    public class PersonListViewModel : INotifyPropertyChanged
+    public class PersonListViewModel : ViewModelBase
     {
-        private ObservableCollection<Person> _personList;
-        public ObservableCollection<Person> PersonList
+        private readonly PeopleDbContext _context;
+        private BindingList<Person> _personList;
+        public BindingList<Person> PersonList
         {
             get { return _personList; }
-            set
-            {
-                _personList = value;
-                OnPropertyChanged();
-            }
+            set { SetProperty(ref _personList, value); }
         }
 
         private string _firstName;
         public string FirstName
         {
             get { return _firstName; }
-            set
-            {
-                _firstName = value;
-                OnPropertyChanged();
-            }
+            set { SetProperty(ref _firstName, value); }
         }
 
         private string _lastName;
         public string LastName
         {
             get { return _lastName; }
-            set
-            {
-                _lastName = value;
-                OnPropertyChanged();
-            }
+            set { SetProperty(ref _lastName, value); }
         }
 
         private Person _currentPerson;
         public Person CurrentPerson
         {
             get { return _currentPerson; }
-            set
-            {
-                _currentPerson = value;
-                OnPropertyChanged();
-            }
+            set { SetProperty(ref _currentPerson, value); }
         }
 
-        public PersonListViewModel()
+        public PersonListViewModel(PeopleDbContext context)
         {
-            PersonList = new ObservableCollection<Person>();
+            _context = context;
+            PersonList = new BindingList<Person>(_context.People.ToList());
+
             AddPersonCommand = new RelayCommand(AddPerson, CanAddPerson);
             RemovePersonCommand = new RelayCommand(RemovePerson, CanRemovePerson);
-            UpdatePersonCommand = new RelayCommand(UpdatePerson);
+            UpdatePersonCommand = new RelayCommand(UpdatePerson, CanUpdatePerson);
         }
 
         public RelayCommand AddPersonCommand { get; private set; }
@@ -69,6 +55,9 @@ namespace CmdPeopleManager.ViewModels
         private void AddPerson()
         {
             Person person = new Person { FirstName = _firstName, LastName = _lastName };
+
+            _context.People.Add(person);
+            _context.SaveChanges();
             PersonList.Add(person);
 
             FirstName = string.Empty;
@@ -82,9 +71,13 @@ namespace CmdPeopleManager.ViewModels
 
         private void RemovePerson()
         {
+
             if (CurrentPerson != null)
             {
+                _context.People.Remove(CurrentPerson);
+                _context.SaveChanges();
                 PersonList.Remove(CurrentPerson);
+
                 CurrentPerson = null;
 
                 FirstName = string.Empty;
@@ -103,14 +96,21 @@ namespace CmdPeopleManager.ViewModels
             {
                 CurrentPerson.FirstName = FirstName;
                 CurrentPerson.LastName = LastName;
+
+                _context.Update(CurrentPerson);
+                _context.SaveChanges();
+
+                int index = PersonList.IndexOf(CurrentPerson);
+                if (index >= 0)
+                {
+                    PersonList.ResetItem(index);
+                }
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private bool CanUpdatePerson()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return (CurrentPerson != null) && (!string.IsNullOrWhiteSpace(FirstName) && !string.IsNullOrWhiteSpace(LastName));
         }
     }
 }

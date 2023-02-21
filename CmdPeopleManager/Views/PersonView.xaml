@@ -26,14 +26,14 @@
                 <Button Content="Modifica" Command="{Binding UpdatePersonCommand}" Margin="0,0,5,0"/>
             </StackPanel>
         </WrapPanel>
-        <ListBox Grid.Row="1" ItemsSource="{Binding PersonList}" SelectedItem="{Binding CurrentPerson, Mode=TwoWay}" SelectionChanged="OnSelectionChanged">
+        <ListBox Name="peopleListBox" Grid.Row="1" ItemsSource="{Binding PersonList}" SelectedItem="{Binding CurrentPerson, Mode=TwoWay}" SelectionChanged="OnSelectionChanged">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{Binding FirstName}"/>
                         <TextBlock Text=" "/>
                         <TextBlock Text="{Binding LastName}"/>
-                    </StackPanel> 
+                    </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
